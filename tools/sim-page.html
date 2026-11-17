@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Advent Calendar on a BUSY Bar (simulator)</title>
+<style>
+  :root { --bg:#111214; --panel:#1b1c20; --line:#2a2b31; --text:#e9e9ec; --dim:#8b8c95; --accent:#ff6a1a; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 28px 20px 48px; }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--dim); margin: 0 0 22px; }
+  .device { background: #2b2c30; border-radius: 22px; padding: 22px; box-shadow: inset 0 1px 0 #3a3b40, 0 18px 40px #0008; }
+  .row { display:flex; gap:18px; align-items:stretch; flex-wrap: wrap; }
+  .screen { background:#050506; border-radius: 10px; padding: 10px; flex: 1 1 520px; display:flex; justify-content:center; align-items:center; position: relative; }
+  .screen canvas { width: 100%; max-width: 576px; image-rendering: pixelated; display:block; }
+  .led { position:absolute; top:8px; right:10px; width:10px; height:10px; border-radius:50%; background:#333; transition: background .15s, box-shadow .15s; }
+  .led.on { background: #ffc830; box-shadow: 0 0 14px #ffc830; }
+  .back { flex: 0 1 300px; background:#050506; border-radius:10px; padding:10px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .back canvas { width: 280px; image-rendering: pixelated; }
+  .label { color: var(--dim); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .controls { margin-top: 18px; display:flex; gap:12px; flex-wrap: wrap; align-items:center; }
+  button { font: inherit; color: var(--text); background: #3a3b41; border: 0; border-radius: 10px; padding: 10px 14px; cursor: pointer; min-width: 44px; }
+  button:hover { background:#46474e; }
+  button:active { transform: translateY(1px); }
+  button.start { background: var(--accent); color:#1b0a00; font-weight:650; }
+  .wheel { display:flex; gap:4px; align-items:center; background:#222327; border-radius: 12px; padding: 4px; }
+  .wheel span { color: var(--dim); padding: 0 6px; font-size: 12px; }
+  .panel { margin-top: 22px; background: var(--panel); border:1px solid var(--line); border-radius: 14px; padding: 16px; display:grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .panel label { display:flex; gap:8px; align-items:center; }
+  input[type=date], input[type=time], select { font: inherit; color: var(--text); background:#26272c; border:1px solid var(--line); border-radius: 8px; padding: 6px 8px; color-scheme: dark; }
+  .quick { display:flex; gap:6px; flex-wrap: wrap; }
+  .quick button { padding: 6px 10px; font-size: 13px; }
+  .status { margin-top: 14px; color: var(--dim); font-size: 13px; min-height: 1.4em; }
+  .status b { color: var(--text); font-weight: 600; }
+  .note { margin-top: 26px; color: var(--dim); font-size: 13px; }
+  kbd { background:#26272c; border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding: 0 5px; font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Advent Calendar · BUSY Bar simulator</h1>
+  <p class="sub">The app's own code, running against a pretend bar in your browser. Pick a date, then open doors.</p>
+
+  <div class="device">
+    <div class="row">
+      <div class="screen"><canvas id="front" width="576" height="128" aria-label="Front display, 72 by 16 pixels"></canvas><div class="led" id="led"></div></div>
+      <div class="back"><div class="label">Back display</div><canvas id="back" width="320" height="160" aria-label="Back display"></canvas></div>
+    </div>
+    <div class="controls">
+      <div class="wheel"><button id="ccw" title="Wheel back (←)">◀</button><span>wheel</span><button id="cw" title="Wheel forward (→)">▶</button></div>
+      <button class="start" id="start" title="Start (Space)">Start</button>
+      <button id="ok" title="OK (O)">OK</button>
+      <button id="backBtn" title="Back (Esc)">Back</button>
+      <button id="relaunch">Relaunch app</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="panel">
+    <div>
+      <div class="label">Bar's clock (simulator only)</div>
+      <div style="display:flex; gap:8px; margin-top:6px"><input type="date" id="date"><input type="time" id="time"></div>
+      <div class="quick" style="margin-top:8px">
+        <button data-date="2026-11-17">17 Nov</button>
+        <button data-date="2026-12-01">1 Dec</button>
+        <button data-date="2026-12-07">7 Dec</button>
+        <button data-date="2026-12-24">24 Dec</button>
+        <button data-date="2026-12-25">25 Dec</button>
+      </div>
+    </div>
+    <div>
+      <div class="label">App settings</div>
+      <label style="margin-top:6px">Test date <select id="testDay"></select></label>
+      <label><input type="checkbox" id="preview"> Unlock every door</label>
+      <label><input type="checkbox" id="sound" checked> Sound when a door opens</label>
+    </div>
+    <div>
+      <div class="label">Saved on the bar</div>
+      <div id="store" style="font-family: ui-monospace, monospace; font-size:12px; margin:6px 0 8px; word-break: break-all;">nothing yet</div>
+      <button id="reset">Forget opened doors</button>
+    </div>
+  </div>
+
+  <p class="note">Keys: <kbd>←</kbd> <kbd>→</kbd> wheel, <kbd>Space</kbd> Start, <kbd>O</kbd> OK, <kbd>Esc</kbd> Back. Changing the date or settings relaunches the app, as the bar would. The back display's text uses a browser font, not the bar's own, and the front is shown at LED scale. Final look: check on a BUSY Bar.</p>
+</main>
+
+<script>
+const APP_CODE = /*APP_CODE*/ "";
+
+// ---------------------------------------------------------------- pretend bar
+const bar = {
+  offsetMin: 60,
+  localStart: 0, realStart: 0,
+  store: {},
+  settings: { sound: true, preview: false },
+  handler: null,
+  front: null, back: {},
+  now() { return this.localStart - this.offsetMin * 60000 + (Date.now() - this.realStart); },
+};
+window.__bar = bar;
+window.__store = {
+  getItem: (k) => (k in bar.store ? bar.store[k] : null),
+  setItem: (k, v) => { bar.store[k] = String(v); showStore(); },
+};
+window.listen = (type, fn) => {
+  if (bar.handler) throw new TypeError("handler already attached");
+  bar.handler = fn;
+  return () => { if (bar.handler === fn) { bar.handler = null; setStatus("App closed. Press <b>Relaunch app</b> to start it again."); } };
+};
+
+const realFetch = window.fetch.bind(window);
+const reply = (status, body) => Promise.resolve(new Response(body == null ? "" : JSON.stringify(body), { status }));
+window.fetch = (url, init = {}) => {
+  url = String(url);
+  if (!url.startsWith("http://localhost/api/")) return realFetch(url, init);
+  const path = url.slice("http://localhost/api/".length);
+  const method = init.method || "GET";
+  if (path === "time") {
+    const iso = new Date(bar.now() + bar.offsetMin * 60000).toISOString().slice(0, 19);
+    return reply(200, { timestamp: iso + "+01:00" });
+  }
+  if (path.startsWith("apps/settings")) return reply(200, { values: bar.settings });
+  if (path === "audio/play") { chime(); return reply(200, null); }
+  if (path === "display/draw" && method === "POST") {
+    const body = JSON.parse(init.body);
+    for (const el of body.elements) {
+      if (el.display === "back") bar.back[el.id] = el; else if (el.id === "front") bar.front = el.data;
+    }
+    if (body.led_notification_color) flashLed();
+    paint();
+    return reply(200, null);
+  }
+  if (path === "display/draw" && method === "DELETE") { bar.front = null; bar.back = {}; paint(); return reply(200, null); }
+  return reply(404, null);
+};
+
+// ---------------------------------------------------------------- loading the app
+// The app's code runs inside a function whose localStorage and Date are the
+// pretend bar's, so time travel and the saved doors stay on this page.
+class BarDate extends Date {
+  constructor(...a) { if (a.length) super(...a); else super(bar.now()); }
+  static now() { return bar.now(); }
+}
+window.__BarDate = BarDate;
+let run = 0;
+function launch() {
+  if (bar.handler) bar.handler({ key: "back", action: "short" });
+  const d = document.getElementById("date").value, t = document.getElementById("time").value || "08:00";
+  bar.localStart = Date.parse(d + "T" + t + ":00Z");
+  bar.realStart = Date.now();
+  bar.settings = { sound: document.getElementById("sound").checked, preview: document.getElementById("preview").checked, test_day: document.getElementById("testDay").value };
+  const mine = ++run;
+  setTimeout(() => {
+    if (mine !== run) return;
+    bar.handler = null; bar.front = null; bar.back = {}; paint();
+    const el = document.createElement("script");
+    el.textContent = "(function (localStorage, Date) {\n" + APP_CODE + "\n})(window.__store, window.__BarDate);";
+    document.body.appendChild(el);
+    el.remove();
+    setStatus(bar.handler ? "Running. " + (bar.settings.preview ? "Every door is unlocked." : "Turn the wheel to browse doors.") : "The app did not start.");
+  }, 80);
+}
+
+// ---------------------------------------------------------------- drawing
+function parseXpm(data) {
+  const lines = data.split("\n");
+  const [w, h, n] = lines[1].split(" ").map(Number);
+  const colors = {};
+  for (let i = 0; i < n; i++) colors[lines[2 + i][0]] = lines[2 + i].slice(4);
+  return { w, h, colors, rows: lines.slice(2 + n, 2 + n + h) };
+}
+const grey = (hex) => {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  const v = Math.round(0.3 * r + 0.59 * g + 0.11 * b);
+  return `rgb(${v},${v},${v})`;
+};
+const frontCv = document.getElementById("front"), fctx = frontCv.getContext("2d");
+const backCv = document.getElementById("back"), bctx = backCv.getContext("2d");
+let painting = false;
+function paint() {
+  if (painting) return;
+  painting = true;
+  requestAnimationFrame(() => {
+    painting = false;
+    const S = 8;
+    fctx.fillStyle = "#050506"; fctx.fillRect(0, 0, 576, 128);
+    if (bar.front) {
+      const x = parseXpm(bar.front);
+      for (let y = 0; y < x.h; y++) for (let i = 0; i < x.w; i++) {
+        fctx.fillStyle = x.colors[x.rows[y][i]];
+        fctx.fillRect(i * S, y * S, S - 1, S - 1);
+      }
+    } else {
+      fctx.fillStyle = "#1a1a1d";
+      for (let y = 0; y < 16; y++) for (let i = 0; i < 72; i++) fctx.fillRect(i * S, y * S, S - 1, S - 1);
+    }
+    // Back display: 160x80 grey, drawn at 2x.
+    bctx.fillStyle = "#000"; bctx.fillRect(0, 0, 320, 160);
+    bctx.fillStyle = "#151515"; bctx.fillRect(296, 0, 24, 160); // the firmware's status bar
+    for (const el of Object.values(bar.back)) {
+      if (el.type === "xpmbitmap") {
+        const x = parseXpm(el.data);
+        for (let y = 0; y < x.h; y++) for (let i = 0; i < x.w; i++) {
+          const c = x.colors[x.rows[y][i]];
+          if (c === "#000000") continue;
+          bctx.fillStyle = grey(c);
+          bctx.fillRect((el.x + i) * 2, (el.y + y) * 2, 2, 2);
+        }
+      } else if (el.type === "text") {
+        bctx.fillStyle = grey(el.color.slice(0, 7));
+        bctx.font = "bold 11px ui-monospace, Menlo, monospace";
+        bctx.textBaseline = "top";
+        bctx.fillText(el.text, el.x * 2, el.y * 2);
+      }
+    }
+  });
+}
+
+// ---------------------------------------------------------------- feedback
+let ledTimer = 0;
+function flashLed() {
+  const led = document.getElementById("led");
+  led.classList.add("on");
+  clearTimeout(ledTimer);
+  ledTimer = setTimeout(() => led.classList.remove("on"), 900);
+}
+let audio = null;
+function chime() {
+  try {
+    audio = audio || new AudioContext();
+    const t0 = audio.currentTime;
+    [880, 1175, 1568].forEach((f, i) => {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.frequency.value = f; o.type = "triangle";
+      g.gain.setValueAtTime(0.0001, t0 + i * 0.09);
+      g.gain.exponentialRampToValueAtTime(0.15, t0 + i * 0.09 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.09 + 0.5);
+      o.connect(g).connect(audio.destination);
+      o.start(t0 + i * 0.09); o.stop(t0 + i * 0.09 + 0.55);
+    });
+  } catch (e) {}
+}
+function setStatus(html) { document.getElementById("status").innerHTML = html; }
+function showStore() {
+  const r = bar.store.record;
+  document.getElementById("store").textContent = r ? r.slice(0, 5) + " " + r.slice(5) + "  (doors 1…24, then Christmas Day)" : "nothing yet";
+}
+
+// ---------------------------------------------------------------- input
+const send = (ev) => { if (bar.handler) bar.handler(ev); else setStatus("App closed. Press <b>Relaunch app</b> to start it again."); };
+const wheel = (d) => send({ key: "encoder", action: d > 0 ? "clockwise" : "counterclockwise", delta: d });
+const press = (key) => send({ key, action: "short" });
+document.getElementById("cw").onclick = () => wheel(1);
+document.getElementById("ccw").onclick = () => wheel(-1);
+document.getElementById("start").onclick = () => press("start");
+document.getElementById("ok").onclick = () => press("ok");
+document.getElementById("backBtn").onclick = () => press("back");
+document.getElementById("relaunch").onclick = launch;
+document.getElementById("reset").onclick = () => { bar.store = {}; showStore(); launch(); };
+frontCv.addEventListener("wheel", (e) => { e.preventDefault(); wheel(e.deltaY > 0 ? 1 : -1); }, { passive: false });
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") wheel(1);
+  else if (e.key === "ArrowLeft") wheel(-1);
+  else if (e.key === " " || e.key === "Enter") { e.preventDefault(); press("start"); }
+  else if (e.key === "o" || e.key === "O") press("ok");
+  else if (e.key === "Escape") press("back");
+});
+for (const b of document.querySelectorAll("[data-date]")) b.onclick = () => { document.getElementById("date").value = b.dataset.date; launch(); };
+{
+  const sel = document.getElementById("testDay");
+  sel.add(new Option("Real date", "real"));
+  for (let d = 1; d <= 25; d++) sel.add(new Option(d === 25 ? "25 December (Christmas)" : d + " December", String(d)));
+}
+for (const id of ["date", "time", "preview", "sound", "testDay"]) document.getElementById(id).addEventListener("change", launch);
+
+document.getElementById("date").value = new Date().toISOString().slice(0, 10);
+document.getElementById("time").value = "08:00";
+launch();
+</script>
+</body>
+</html>
