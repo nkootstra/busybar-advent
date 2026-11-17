@@ -169,6 +169,16 @@ export function text(cv, x, y, str, color, scale = 1) {
   }
   return cx;
 }
+/** `str` as a sprite in one colour, or in the colour `color(n)` gives for letter n: for text drawn on every frame. */
+export function textSprite(str, color) {
+  const rows = ["", "", "", "", ""];
+  for (let n = 0; n < str.length; n++) {
+    const g = FONT[str[n]] || FONT["?"];
+    const c = typeof color === "function" ? color(n) : color;
+    for (let j = 0; j < 5; j++) rows[j] += (n ? " " : "") + g[j].replace(/#/g, c).replace(/\./g, " ");
+  }
+  return rows;
+}
 /**
  * A sine wave in whole numbers: SINE[i] is the sine of i/64 of a turn, times 16. The bar's runtime allocates
  * memory for every fraction it computes, so animations that run on every frame count in whole numbers.

@@ -1,12 +1,14 @@
 // Everything on the displays that is not a scene: the doors, the opening, the countdown to December and the tree
 // on the back display.
-import { backdrop, blitSlice, fill, rect, set, sprite, text, textWidth } from "./canvas.js";
+import { backdrop, blitSlice, fill, rect, set, sprite, text, textSprite, textWidth } from "./canvas.js";
 import { snow, snowGround, stars, twinkle } from "./scenery.js";
 
 const W = 72;
 const H = 16;
 /** The bulbs run around the edge of a door: this many of them. */
 const BULBS = 2 * (W + H) - 4;
+
+const OPEN_BRIGHT = textSprite("OPEN", "Y");
 
 /** The pixel of bulb `i`, counted clockwise from the top-left corner. */
 function bulb(cv, i, c) {
@@ -39,7 +41,7 @@ function doorBack(cv, day, opts) {
 /** The part of an unlocked door that moves: lights running around it, and OPEN blinking. */
 function doorLights(cv, t) {
   for (let i = (3 - ((t >> 1) % 3)) % 3; i < BULBS; i += 3) bulb(cv, i, "y");
-  if (t % 16 < 10) text(cv, 52, 6, "OPEN", "Y");
+  if (t % 16 < 10) sprite(cv, 52, 6, OPEN_BRIGHT);
 }
 
 /**

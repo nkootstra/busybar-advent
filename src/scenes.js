@@ -7,7 +7,7 @@
 // `t` counts frames of 1/8 s since the door was shown. `ctx.candles` is the number of Advent Sundays so far and
 // `ctx.poke` the frames since Start was pressed on the open door (large when it was not): scenes with an `action`
 // answer to it.
-import { SINE, backdrop, disc, fill, rect, rnd, set, sprite, text, textWidth } from "./canvas.js";
+import { SINE, backdrop, disc, fill, rect, rnd, set, sprite, text, textSprite, textWidth } from "./canvas.js";
 import {
   DARK_PINE,
   HOUSE,
@@ -24,6 +24,16 @@ import {
   twinkle,
 } from "./scenery.js";
 
+
+/**
+ * One spark of a burst around (cx, cy): `turn` is its direction in 64ths of a turn, `reach` how far out it is in
+ * 16ths of a pixel, and `flat` squeezes the ring vertically (16 is a circle).
+ */
+function burst(cv, cx, cy, turn, reach, flat, c) {
+  const x = cx + ((SINE[(turn + 16) & 63] * reach + 128) >> 8);
+  const y = cy + ((SINE[turn & 63] * reach * flat + 2048) >> 12);
+  set(cv, x, y, c);
+}
 
 /** Draws a day number on a dark plate in the top-left corner. */
 function badge(cv, day) {
@@ -710,11 +720,7 @@ const gift = {
     rect(cv, 35 + shake, ly, 2, 2, "y");
     sprite(cv, 32 + shake, ly - 2, ["yy  yy", " yyyy "]);
     if (lift > 0) {
-      const r = (f - 27) * 1.3;
-      for (let k = 0; k < 10; k++) {
-        const a = (k / 10) * Math.PI * 2;
-        set(cv, Math.round(36 + Math.cos(a) * r * 1.8), Math.round(7 + Math.sin(a) * r * 0.7), LIGHTS[k % 4]);
-      }
+      for (let k = 0; k < 10; k++) burst(cv, 36, 7, (k * 13) >> 1, (f - 27) * 37, 6, LIGHTS[k % 4]);
     }
   },
 };
@@ -899,6 +905,8 @@ const silentNight = {
   },
 };
 
+/** MERRY in two colourings, to swap between. */
+const MERRY = [0, 1].map((phase) => textSprite("MERRY", (n) => ((n + phase) % 2 ? "y" : "R")));
 const finale = {
   caption: "Merry Christmas!",
   note: "Joy to the world",
@@ -910,13 +918,11 @@ const finale = {
   draw(cv, t) {
     snow(cv, t, 10, 77);
     treeLights(cv, 59, 1, t);
-    text(cv, 12, 2, "MERRY", (i) => ((i + (t >> 2)) % 2 ? "y" : "R"));
+    sprite(cv, 12, 2, MERRY[(t >> 2) % 2]);
+    // A rocket climbs, then bursts into a ring.
     const f = t % 24;
     if (f < 12) {
-      for (let k = 0; k < 8; k++) {
-        const a = (k / 8) * Math.PI * 2;
-        set(cv, Math.round(46 + Math.cos(a) * f * 0.4), Math.round(4 + Math.sin(a) * f * 0.4), LIGHTS[(k + (t >> 3)) % 4]);
-      }
+      for (let k = 0; k < 8; k++) burst(cv, 46, 4, k * 8, (f * 13) >> 1, 16, LIGHTS[(k + (t >> 3)) % 4]);
     } else if (f < 16) {
       set(cv, 46, 4 + (16 - f), "Y");
     }
