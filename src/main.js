@@ -97,9 +97,9 @@ let shownFront = null;
 let shownBack = null;
 let unbind = null;
 
-/** Frames of animation since the moment `at`. */
+/** Frames of animation since the moment `at`; never negative, also when the bar's clock is set back. */
 function framesSince(at, now) {
-  return Math.floor((now - at) / FRAME_MS);
+  return Math.max(0, Math.floor((now - at) / FRAME_MS));
 }
 
 // --------------------------------------------------------------------------------------------------- doors
@@ -208,10 +208,11 @@ function backElements() {
   if (key === shownBack) return [];
   shownBack = key;
 
-  // What the buttons do here: Start opens a closed door and plays with some of the scenes.
+  // What the buttons do here: Start opens a door that can be opened and plays with some of the scenes.
   let help = "OK: today";
-  if (!opened) help = "Start: open  OK: today";
-  else if (scene.action) help = "Start: " + scene.action;
+  if (selected === 0) help = " ";
+  else if (opened) help = scene.action ? "Start: " + scene.action : help;
+  else if (selected <= s.unlocked) help = "Start: open  OK: today";
   return [
     bitmap("tree", treeXpm(record.opened, selected), 4, 4, "back"),
     backText("title", title, TEXT_X, 8, WHITE),

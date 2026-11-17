@@ -66,6 +66,7 @@ test("a door of a later day stays locked", async () => {
   await bar.wheel(3);
   assert.equal(bar.text("title"), "December 8");
   assert.equal(bar.text("line"), "Opens in 3d");
+  assert.equal(bar.text("help2"), "OK: today");
   await bar.press("start");
   await bar.advance(2000);
   assert.equal(bar.store.record, undefined);
@@ -96,6 +97,7 @@ test("the wheel stops at door 1 and at Christmas Day", async () => {
 test("before December it counts the days and nothing opens", async () => {
   const bar = await launch(app, { date: "2026-11-17" });
   assert.equal(bar.text("title"), "Advent in 14 days");
+  assert.equal(bar.text("help2"), " ");
   await bar.press("start");
   assert.equal(bar.store.record, undefined);
   await bar.wheel(1);

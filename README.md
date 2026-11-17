@@ -58,7 +58,7 @@ npm run bench   # how long the bar takes for a frame of every screen (needs the 
 | `src/canvas.js` | A 72x16 canvas of palette characters, sprites, a small font, and its XPM2 text for the bar. |
 | `src/bar.js` | The calls to the bar's HTTP API. |
 
-The bar runs JavaScript slowly: repainting the whole display on every frame gave 3 to 5 frames a second. A scene therefore paints what stands still once, and on each frame only what moves, on a copy of that backdrop. Animations follow the clock, not the number of frames drawn. A frame now takes about 60 ms, of which the bar's own display call is 45, and the app holds its 8 frames a second. [AGENTS.md](AGENTS.md) has the measurements and the rules that follow from them.
+The bar runs JavaScript slowly: repainting the whole display on every frame gave 3 to 5 frames a second. A scene therefore paints what stands still once, and on each frame only what moves, on a copy of that backdrop. Animations follow the clock, not the number of frames drawn. A frame now takes about 61 ms on average (72 at most), of which the bar's own display call is 45, and the app holds its 8 frames a second. [AGENTS.md](AGENTS.md) has the measurements and the rules that follow from them.
 
 Tested on BUSY Bar Emulator with firmware 1.3.1.
 

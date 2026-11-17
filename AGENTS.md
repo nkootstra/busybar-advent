@@ -96,7 +96,7 @@ When in doubt, choose the cheaper option: a slower refresh, fewer requests, less
 
 The bar runs JavaScript slowly and has little memory. Both were measured on BUSY Bar Emulator, which runs apps at the bar's speed (firmware 1.3.1).
 
-- A frame must take less than 125 ms for the 8 frames a second the animations are drawn for. Sending the front display takes the bar about 45 ms of that whatever the app does. `npm run bench` times a frame of every screen: about 60 ms on average, 70 at most. Run it after changing how anything is drawn.
+- A frame must take less than 125 ms for the 8 frames a second the animations are drawn for. Sending the front display takes the bar about 45 ms of that whatever the app does. `npm run bench` times a frame of every screen: about 61 ms on average, 72 at most. Run it after changing how anything is drawn.
 - **A scene is two functions.** `back(cv, ctx)` paints what stands still and runs once, when the door is shown; `draw(cv, t, ctx)` runs on every frame on a copy of that backdrop and paints only what moves. Repainting all 1,152 pixels on every frame gave 3 to 5 frames a second.
 - Count in whole numbers in `draw`: the runtime allocates memory for every fraction. `SINE` in `src/canvas.js` is a sine table for that. In `back`, anything goes.
 - `sprite` and `rect` clip once per row and write pixels directly; `set` checks every pixel and is for single ones.

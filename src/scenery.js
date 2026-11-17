@@ -10,6 +10,8 @@ export function snow(cv, t, count, seed) {
     const speed = 0.18 + rnd(i * 7 + seed) * 0.3;
     const y = Math.floor((rnd(i * 3 + seed) * 18 + t * speed) % 18) - 1;
     const x = Math.floor(rnd(i + seed) * W + Math.sin(t * 0.12 + i) * 1.2 + W) % W;
+    // The day's number keeps its corner clear.
+    if (x < 10 && y < 7) continue;
     set(cv, x, y, i % 3 ? "w" : "s");
   }
 }
