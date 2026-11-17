@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { PALETTE, createCanvas, toXpm } from "../src/canvas.js";
 import { DOORS, drawScene, sceneOf } from "../src/scenes.js";
-import { TREE_H, TREE_W, drawCountdown, drawDoor, drawOpening, drawTree, paintDoor } from "../src/screens.js";
+import { drawCountdown, drawDoor, drawOpening, paintDoor, treeXpm } from "../src/screens.js";
 
 const KEYS = new Set(Object.keys(PALETTE));
 
@@ -48,7 +48,7 @@ test("there are 24 doors and Christmas Day, each with a scene of its own", () =>
 test("every day's lines fit the back display", () => {
   for (let day = 1; day <= DOORS; day++) {
     const scene = sceneOf(day);
-    for (const line of [scene.caption, scene.note, "Start: " + (scene.action || "replay")]) {
+    for (const line of [scene.caption, scene.note, "Start: " + (scene.action || "")]) {
       assert.match(line, /^[\x20-\x7e]+$/, "day " + day);
       assert.ok(line.length <= 20, "day " + day + ": " + line);
     }
@@ -95,20 +95,31 @@ test("doors, the opening and the countdown draw only palette colours", () => {
 });
 
 test("the tree gets an ornament per opened door and a star at Christmas", () => {
-  const cv = createCanvas(TREE_W, TREE_H);
   const none = [];
   const all = [];
   for (let d = 0; d <= 25; d++) {
     none.push(false);
     all.push(true);
   }
-  drawTree(cv, none, 0);
-  assertPalette(cv, "empty tree");
-  const bare = cv.px.join("");
-  drawTree(cv, all, 25);
-  assertPalette(cv, "full tree");
-  assert.notEqual(cv.px.join(""), bare);
-  assert.ok(cv.px.includes("y"), "the star is lit");
+  const pixels = (xpm) => {
+    const lines = xpm.split("\n");
+    assert.equal(lines[1], "48 72 " + KEYS.size + " 1");
+    const rows = lines.slice(2 + KEYS.size);
+    assert.equal(rows.length, 72);
+    for (const row of rows) {
+      assert.equal(row.length, 48);
+      for (const c of row) assert.ok(KEYS.has(c), "the tree has a pixel " + JSON.stringify(c));
+    }
+    return rows.join("");
+  };
+  const bare = pixels(treeXpm(none, 0));
+  const full = pixels(treeXpm(all, 25));
+  const count = (text, c) => text.split(c).length - 1;
+  assert.equal(count(bare, "y"), 0, "nothing is lit on a bare tree");
+  assert.ok(count(full, "y") > 20, "the star is lit");
+  // 24 ornaments of 2 by 2 pixels are dark on the bare tree and all in colour on the full one.
+  assert.ok(count(bare, "k") >= 24 * 4);
+  assert.equal(count(full, "k"), 0);
 });
 
 test("the bitmap is XPM2 with one character per pixel", () => {

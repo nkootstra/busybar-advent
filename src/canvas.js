@@ -77,15 +77,24 @@ export function blitSlice(dst, src, x0, x1, dx) {
     for (let x = from; x < to; x++) dst.px[row + x + dx] = src.px[row + x];
   }
 }
+/** The first lines of an XPM2 bitmap of `w` by `h` pixels: its size and the palette. */
+export function xpmHeader(w, h) {
+  return "! XPM2\n" + w + " " + h + " " + PALETTE_KEYS.length + " 1\n" + XPM_COLORS;
+}
+
 /**
- * The canvas as an XPM2 bitmap for an `xpmbitmap` display element. One join over the whole canvas and a substring
- * per row: the bar's runtime is slow at allocating, and this allocates the least.
+ * Appends the canvas to `rows`, a string per row. One join over the whole canvas and a substring per row: the
+ * bar's runtime is slow at allocating, and this allocates the least.
  */
-export function toXpm(cv) {
+export function xpmRows(cv, rows) {
   const all = cv.px.join("");
-  const rows = ["! XPM2", cv.w + " " + cv.h + " " + PALETTE_KEYS.length + " 1", XPM_COLORS];
   for (let y = 0; y < cv.h; y++) rows.push(all.substring(y * cv.w, (y + 1) * cv.w));
-  return rows.join("\n");
+  return rows;
+}
+
+/** The canvas as an XPM2 bitmap for an `xpmbitmap` display element. */
+export function toXpm(cv) {
+  return xpmRows(cv, [xpmHeader(cv.w, cv.h)]).join("\n");
 }
 let layer = null;
 let layerKey = "";

@@ -1,6 +1,19 @@
 // Everything on the displays that is not a scene: the doors, the opening, the countdown to December and the tree
 // on the back display.
-import { backdrop, blitSlice, fill, rect, set, sprite, text, textSprite, textWidth } from "./canvas.js";
+import {
+  backdrop,
+  blitSlice,
+  createCanvas,
+  fill,
+  rect,
+  set,
+  sprite,
+  text,
+  textSprite,
+  textWidth,
+  xpmHeader,
+  xpmRows,
+} from "./canvas.js";
 import { snow, snowGround, stars, twinkle } from "./scenery.js";
 
 const W = 72;
@@ -83,8 +96,10 @@ export function drawCountdown(cv, t, daysLeft) {
 
 // ------------------------------------------------------------------------------------- the back display's tree
 
-export const TREE_W = 48;
-export const TREE_H = 72;
+const TREE_W = 48;
+const TREE_H = 72;
+/** Rows painted at a time; TREE_H is a multiple of it. */
+const TREE_BAND = 12;
 const MID = TREE_W / 2;
 /** The four tiers of the tree: the row each starts at, how many rows, and its width at the top and the bottom. */
 const TIERS = [
@@ -126,26 +141,39 @@ function ornamentAt(door) {
   return null;
 }
 
-/**
- * The tree on the back display: an ornament for every opened door, the star once Christmas comes.
- * `selected` gets a ring.
- */
-export function drawTree(cv, opened, selected) {
+/** Paints the rows of the tree from `top` down onto `cv`, as many as it is high. */
+function drawTreeBand(cv, top, opened, selected) {
   fill(cv, ".");
-  for (let y = 0; y < TREE_H; y++) {
+  for (let y = top; y < top + cv.h; y++) {
     const hw = halfWidthAt(y);
     if (hw <= 0) continue;
-    for (let x = Math.round(MID - hw); x < Math.round(MID + hw); x++) set(cv, x, y, (x + y * 3) % 7 === 0 ? "d" : "g");
+    const row = (y - top) * cv.w;
+    for (let x = Math.round(MID - hw); x < Math.round(MID + hw); x++) cv.px[row + x] = (x + y * 3) % 7 === 0 ? "d" : "g";
   }
-  rect(cv, 21, 62, 6, 8, "b");
-  sprite(cv, 20, 2, opened[25] ? STAR : STAR_OFF);
+  rect(cv, 21, 62 - top, 6, 8, "b");
+  sprite(cv, 20, 2 - top, opened[25] ? STAR : STAR_OFF);
   for (let d = 1; d <= 24; d++) {
     const at = ornamentAt(d);
-    if (d === selected) rect(cv, at.x - 1, at.y - 1, 4, 4, "w");
-    rect(cv, at.x, at.y, 2, 2, opened[d] ? ORN_COLORS[d % ORN_COLORS.length] : "k");
+    if (d === selected) rect(cv, at.x - 1, at.y - 1 - top, 4, 4, "w");
+    rect(cv, at.x, at.y - top, 2, 2, opened[d] ? ORN_COLORS[d % ORN_COLORS.length] : "k");
   }
   if (selected === 25) {
-    rect(cv, 19, 0, 10, 1, "w");
-    rect(cv, 19, 9, 10, 1, "w");
+    rect(cv, 19, 0 - top, 10, 1, "w");
+    rect(cv, 19, 9 - top, 10, 1, "w");
   }
+}
+
+/**
+ * The tree on the back display, as an XPM2 bitmap: an ornament for every opened door, the star once Christmas
+ * comes, and a ring around `selected`. It is painted a band at a time, so that the bar never holds the whole
+ * picture as a canvas: memory is the scarce thing there.
+ */
+export function treeXpm(opened, selected) {
+  const band = createCanvas(TREE_W, TREE_BAND);
+  const rows = [xpmHeader(TREE_W, TREE_H)];
+  for (let top = 0; top < TREE_H; top += TREE_BAND) {
+    drawTreeBand(band, top, opened, selected);
+    xpmRows(band, rows);
+  }
+  return rows.join("\n");
 }

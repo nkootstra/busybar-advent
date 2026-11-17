@@ -19,7 +19,7 @@ import {
 } from "./calendar.js";
 import { createCanvas, toXpm } from "./canvas.js";
 import { drawScene, sceneOf } from "./scenes.js";
-import { TREE_H, TREE_W, drawCountdown, drawDoor, drawOpening, drawTree, paintDoor } from "./screens.js";
+import { drawCountdown, drawDoor, drawOpening, paintDoor, treeXpm } from "./screens.js";
 
 const APP = manifest.id;
 /** One frame of animation. The bar may draw fewer: animations follow the clock, not the number of frames drawn. */
@@ -208,12 +208,9 @@ function backElements() {
   if (key === shownBack) return [];
   shownBack = key;
 
-  // The tree is drawn on a canvas of its own that is let go at once: it is needed only when a door changes.
-  const treeCv = createCanvas(TREE_W, TREE_H);
-  drawTree(treeCv, record.opened, selected);
   const play = opened && scene.action ? scene.action : opened ? "replay" : "open";
   return [
-    bitmap("tree", toXpm(treeCv), 4, 4, "back"),
+    bitmap("tree", treeXpm(record.opened, selected), 4, 4, "back"),
     backText("title", title, TEXT_X, 8, WHITE),
     backText("line", line, TEXT_X, 22, LIGHT),
     backText("note", opened ? scene.note : " ", TEXT_X, 32, GREY),

@@ -5,5 +5,6 @@
   "version": "0.1.0",
   "api_version": "27.12.0",
   "description": "Open a door a day until Christmas and fill the tree.",
-  "author": "Niels Kootstra"
+  "author": "Niels Kootstra",
+  "heap_size_kib": 160
 }
