@@ -1,9 +1,9 @@
 {
   "format_version": 1,
-  "id": "io.github.yourname.advent",
+  "id": "io.kootstra.advent",
   "name": "Advent Calendar",
   "version": "0.1.0",
   "api_version": "27.12.0",
   "description": "Open a door a day until Christmas and fill the tree.",
-  "author": "yourname"
+  "author": "Niels Kootstra"
 }
