@@ -4,6 +4,7 @@
 // quits. One timer drives everything: it paints a frame, sends it only if it differs from the last one, and waits
 // for the bar's answer before the next.
 import manifest from "./appmeta/manifest.json";
+import { backText, bitmap, draw, loadSettings, loadTime, playSound } from "./bar.js";
 import {
   candlesLit,
   daysUntil,
@@ -21,7 +22,6 @@ import { drawScene, sceneOf } from "./scenes.js";
 import { TREE_H, TREE_W, drawCountdown, drawDoor, drawOpening, drawTree, paintDoor } from "./screens.js";
 
 const APP = manifest.id;
-const API = "http://localhost/api/";
 /** One frame of animation. The bar may draw fewer: animations follow the clock, not the number of frames drawn. */
 const FRAME_MS = 125;
 /** How long a door takes to slide open, and a locked one to rattle, in frames. */
@@ -34,45 +34,24 @@ const NEVER = 9999;
 const OPEN_SOUND = "shared/sounds/calendar_event_starts.snd";
 const OPEN_LIGHT = "#FFC830FF";
 const STORE_KEY = "record";
+/** The back display: where its text starts, right of the tree, and its three greys. */
+const TEXT_X = 58;
+const WHITE = "#FFFFFFFF";
+const LIGHT = "#C8C8C8FF";
+const GREY = "#808080FF";
 
 // ------------------------------------------------------------------------------------------------- the bar
-
-function call(method, path, body) {
-  const init =
-    body === undefined
-      ? { method }
-      : { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
-  return fetch(API + path, init).then((res) =>
-    res.text().then((txt) => {
-      if (!res.ok) throw new Error(method + " " + path + ": HTTP " + res.status);
-      return txt ? JSON.parse(txt) : null;
-    }),
-  );
-}
 
 function report(err) {
   console.error(APP + ": " + (err && err.message ? err.message : String(err)));
 }
 
-function loadSettings() {
-  return call("GET", "apps/settings?app_id=" + encodeURIComponent(APP)).then(
-    (doc) => (doc && doc.values) || {},
-    (err) => {
-      report(err);
-      return {};
-    },
-  );
-}
-
-/** The bar's zone, in minutes east of UTC. */
+/** The bar's zone, in minutes east of UTC; 0 when the bar does not say. */
 function loadOffset() {
-  return call("GET", "time").then(
-    (answer) => parseOffset(answer && answer.timestamp),
-    (err) => {
-      report(err);
-      return 0;
-    },
-  );
+  return loadTime().then(parseOffset, (err) => {
+    report(err);
+    return 0;
+  });
 }
 
 function readStore() {
@@ -173,7 +152,7 @@ function start() {
   writeStore(serializeRecord(record));
   openedAt = shownAt = now;
   led = OPEN_LIGHT;
-  if (settings.sound) call("POST", "audio/play", { application_name: APP, stock_path: OPEN_SOUND }).catch(report);
+  if (settings.sound) playSound(APP, OPEN_SOUND).catch(report);
 }
 
 // -------------------------------------------------------------------------------------------------- frames
@@ -209,10 +188,6 @@ function nudge(cv, dx) {
   }
 }
 
-function backText(id, value, y, color) {
-  return { id, type: "text", text: value, x: 58, y, font: "small", color, align: "top_left", display: "back" };
-}
-
 /** The back display's elements, or none when it already shows them. */
 function backElements() {
   const opened = selected > 0 && record.opened[selected];
@@ -238,13 +213,13 @@ function backElements() {
   drawTree(treeCv, record.opened, selected);
   const play = opened && scene.action ? scene.action : opened ? "replay" : "open";
   return [
-    { id: "tree", type: "xpmbitmap", data: toXpm(treeCv), x: 4, y: 4, align: "top_left", display: "back" },
-    backText("title", title, 8, "#FFFFFFFF"),
-    backText("line", line, 22, "#C8C8C8FF"),
-    backText("note", opened ? scene.note : " ", 32, "#808080FF"),
-    backText("count", count + " of 24 opened", 46, "#C8C8C8FF"),
-    backText("help1", settings.testDay ? "Test date: " + settings.testDay + " Dec" : "Wheel: browse", 58, "#808080FF"),
-    backText("help2", "Start: " + play, 68, "#808080FF"),
+    bitmap("tree", toXpm(treeCv), 4, 4, "back"),
+    backText("title", title, TEXT_X, 8, WHITE),
+    backText("line", line, TEXT_X, 22, LIGHT),
+    backText("note", opened ? scene.note : " ", TEXT_X, 32, GREY),
+    backText("count", count + " of 24 opened", TEXT_X, 46, LIGHT),
+    backText("help1", settings.testDay ? "Test date: " + settings.testDay + " Dec" : "Wheel: browse", TEXT_X, 58, GREY),
+    backText("help2", "Start: " + play, TEXT_X, 68, GREY),
   ];
 }
 
@@ -254,23 +229,20 @@ function frame(now) {
   const xpm = toXpm(front);
   if (xpm !== shownFront) {
     shownFront = xpm;
-    elements.push({ id: "front", type: "xpmbitmap", data: xpm, x: 0, y: 0, align: "top_left" });
+    elements.push(bitmap("front", xpm, 0, 0, "front"));
   }
   const back = backElements();
   for (let i = 0; i < back.length; i++) elements.push(back[i]);
   return elements;
 }
 
+/** Sends a frame. One the bar refuses is forgotten, so that the next is sent whole. */
 function send(elements) {
-  const body = { application_name: APP, priority: 50, elements };
-  if (led) {
-    body.led_notification_color = led;
-    led = null;
-  }
-  return fetch(API + "display/draw", { method: "POST", body: JSON.stringify(body) }).then(
-    (res) => {
-      // A refused frame is forgotten, so that the next one is sent whole.
-      if (res && res.status !== 200) shownFront = shownBack = null;
+  const light = led;
+  led = null;
+  return draw(APP, elements, light).then(
+    (taken) => {
+      if (!taken) shownFront = shownBack = null;
     },
     (err) => {
       shownFront = shownBack = null;
@@ -325,7 +297,12 @@ function onInput(event) {
 
 function main() {
   unbind = listen("input", onInput);
-  Promise.all([loadSettings(), loadOffset()]).then(([values, o]) => {
+  // Without its settings the app runs on the defaults.
+  const stored = loadSettings(APP).catch((err) => {
+    report(err);
+    return {};
+  });
+  Promise.all([stored, loadOffset()]).then(([values, o]) => {
     settings = {
       sound: values.sound !== false,
       preview: values.preview === true,
