@@ -2,9 +2,25 @@
 
 A door a day until Christmas. Each December day has a door on the front display; **Start** opens it, with a chime and a golden light, to an animated pixel scene. On the back display a tree gains an ornament for every door you opened, and its star on Christmas Day.
 
-![Christmas Eve](screenshots/front-1.png) ![A door](screenshots/front-2.png) ![Snow globe](screenshots/front-3.png) ![Northern lights](screenshots/front-4.png)
+![The door of 9 December slides open to a snow globe, and Start shakes it](docs/door.gif)
 
-![The back display](screenshots/back-1.png)
+![Christmas Eve: a church and houses under a star, in the snow](docs/screenshots/front-1.png)
+
+![A closed door: 24 December, open](docs/screenshots/front-2.png)
+
+![The snow globe, shaken](docs/screenshots/front-3.png)
+
+![The northern lights](docs/screenshots/front-4.png)
+
+![By the fire](docs/screenshots/front-5.png)
+
+![The toy train](docs/screenshots/front-6.png)
+
+The back display, with the tree filling up:
+
+![The back display: the tree, the day, the scene's name and what Start does](docs/screenshots/back-3.png)
+
+The pictures are the bar's own, from BUSY Bar Emulator, enlarged eight times; `screenshots/` has them at the displays' size, 72x16 and 160x80, as the catalog takes them.
 
 ## Using it
 

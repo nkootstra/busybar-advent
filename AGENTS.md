@@ -117,6 +117,7 @@ The bar runs JavaScript slowly and has little memory. Both were measured on BUSY
 - `npm test` builds the app, then runs the date rules, the drawing and the built app on a pretend bar (`tools/sim.mjs`): its clock moves only when a test says so.
 - `npm run bench` needs BUSY Bar Emulator running and this folder trusted by it.
 - `node tools/make-icons.mjs` writes the two icons in `src/appmeta`.
+- `node tools/enlarge-screenshots.mjs` writes `docs/screenshots`, the enlarged copies the README shows. Run it after taking new screenshots.
 - Screenshots in `screenshots/` come from the emulator (`busy-emulator screenshot`), not from the simulator page: the catalog wants the bar's own picture.
 
 ## Before finishing
