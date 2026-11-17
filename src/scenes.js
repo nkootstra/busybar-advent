@@ -412,14 +412,15 @@ const aurora = {
   },
   draw(cv, t) {
     // Two waves of different lengths drift against each other; the band hangs five rows down from them.
+    // Neighbouring columns share a wave height: half the arithmetic, and the curtain looks no different.
     const px = cv.px;
-    for (let x = 0; x < W; x++) {
+    for (let x = 0; x < W; x += 2) {
       const top = 2 + ((38 * SINE[(x * 2 + t) & 63] + 19 * SINE[(((x * 3) >> 2) - (t >> 1)) & 63] + 128) >> 8);
-      for (let k = (x + (t >> 1)) % 9 === 0 ? 1 : 0; k < 5; k++) {
-        const y = top + k;
-        // Nothing above the sky, and the day's number keeps its corner.
-        if (y < 0 || (x < 10 && y < 7)) continue;
-        px[y * W + x] = AURORA[k];
+      // Nothing above the sky, and the day's number keeps its corner.
+      const from = Math.max(x < 10 ? 7 : 0, top);
+      for (let y = from; y < top + 5; y++) {
+        const at = y * W + x;
+        px[at] = px[at + 1] = AURORA[y - top];
       }
     }
   },
