@@ -34,6 +34,33 @@ test("Start opens today's door with a sound and a light, and remembers it", asyn
   assert.deepEqual(bar.errors, []);
 });
 
+test("an open door shows its scene's lines, and Start plays with it", async () => {
+  const bar = await launch(app, { date: "2026-12-09" });
+  assert.equal(bar.text("help2"), "Start: open  OK: today");
+  assert.equal(bar.text("note"), " ");
+  await bar.press("start");
+  await bar.advance(8000);
+  assert.equal(bar.text("line"), "Snow globe");
+  assert.equal(bar.text("note"), "Give it a shake");
+  assert.equal(bar.text("help2"), "Start: shake");
+
+  const resting = bar.front.join("\n");
+  await bar.press("start");
+  await bar.advance(1000);
+  assert.notEqual(bar.front.join("\n"), resting);
+  assert.equal(bar.writes, 1);
+  assert.deepEqual(bar.sounds.length, 1);
+});
+
+test("animations follow the clock when the bar draws slowly", async () => {
+  const bar = await launch(app, { date: "2026-12-14", store: { record: "2026:" + bits(14) } });
+  const early = bar.front.join("\n");
+  // Ten seconds pass in one step: the train has moved on as far as it would have frame by frame.
+  await bar.advance(10000);
+  assert.notEqual(bar.front.join("\n"), early);
+  assert.deepEqual(bar.errors, []);
+});
+
 test("a door of a later day stays locked", async () => {
   const bar = await launch(app, { date: "2026-12-05" });
   await bar.wheel(3);

@@ -555,6 +555,7 @@ const train = {
 const treeScene = {
   caption: "Tree lights",
   note: "Deck the halls",
+  action: "light it up",
   back(cv) {
     fill(cv, "n");
     stars(cv, 10, 13, 9);
@@ -566,9 +567,9 @@ const treeScene = {
     rect(cv, 45, 11, 1, 4, "w");
     rect(cv, 43, 12, 6, 1, "w");
   },
-  draw(cv, t) {
+  draw(cv, t, ctx) {
     twinkle(cv, t, 10, 13, 9);
-    treeLights(cv, 30, 1, t);
+    treeLights(cv, 30, 1, t, ctx.poke < 20);
     snow(cv, t, 12, 8);
   },
 };

@@ -208,7 +208,10 @@ function backElements() {
   if (key === shownBack) return [];
   shownBack = key;
 
-  const play = opened && scene.action ? scene.action : opened ? "replay" : "open";
+  // What the buttons do here: Start opens a closed door and plays with some of the scenes.
+  let help = "OK: today";
+  if (!opened) help = "Start: open  OK: today";
+  else if (scene.action) help = "Start: " + scene.action;
   return [
     bitmap("tree", treeXpm(record.opened, selected), 4, 4, "back"),
     backText("title", title, TEXT_X, 8, WHITE),
@@ -216,7 +219,7 @@ function backElements() {
     backText("note", opened ? scene.note : " ", TEXT_X, 32, GREY),
     backText("count", count + " of 24 opened", TEXT_X, 46, LIGHT),
     backText("help1", settings.testDay ? "Test date: " + settings.testDay + " Dec" : "Wheel: browse", TEXT_X, 58, GREY),
-    backText("help2", "Start: " + play, TEXT_X, 68, GREY),
+    backText("help2", help, TEXT_X, 68, GREY),
   ];
 }
 

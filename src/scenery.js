@@ -84,11 +84,14 @@ for (let j = 2; j < 12; j++) {
   for (let i = 0; i < 11; i++) if (TREE[j][i] === "g" && (i * 7 + j * 3) % 5 === 0) TREE_LIGHTS.push([i, j]);
 }
 
-/** The lights of a TREE drawn at (x, y): they run through four colours, and the star on top blinks. */
-export function treeLights(cv, x, y, t) {
+/**
+ * The lights of a TREE drawn at (x, y): they run through four colours, and the star on top blinks.
+ * With `flash` they all blink white together instead.
+ */
+export function treeLights(cv, x, y, t, flash) {
   for (let k = 0; k < TREE_LIGHTS.length; k++) {
     const at = TREE_LIGHTS[k];
-    set(cv, x + at[0], y + at[1], LIGHTS[(at[0] + at[1] + (t >> 2)) % 4]);
+    set(cv, x + at[0], y + at[1], flash ? (t % 2 ? "w" : "Y") : LIGHTS[(at[0] + at[1] + (t >> 2)) % 4]);
   }
   set(cv, x + 5, y + 1, t % 8 < 4 ? "Y" : "y");
 }
