@@ -7,7 +7,7 @@
 // `t` counts frames of 1/8 s since the door was shown. `ctx.candles` is the number of Advent Sundays so far and
 // `ctx.poke` the frames since Start was pressed on the open door (large when it was not): scenes with an `action`
 // answer to it.
-import { backdrop, disc, fill, rect, rnd, set, sprite, text, textWidth } from "./canvas.js";
+import { SINE, backdrop, disc, fill, rect, rnd, set, sprite, text, textWidth } from "./canvas.js";
 import {
   DARK_PINE,
   HOUSE,
@@ -387,6 +387,7 @@ const robin = {
   },
 };
 
+const AURORA = ["m", "c", "G", "G", "g"];
 const aurora = {
   caption: "Northern lights",
   note: "The sky dances",
@@ -399,14 +400,15 @@ const aurora = {
     }
   },
   draw(cv, t) {
-    const band = ["m", "c", "G", "G", "g"];
+    // Two waves of different lengths drift against each other; the band hangs five rows down from them.
+    const px = cv.px;
     for (let x = 0; x < W; x++) {
-      const top = Math.round(5 + 2.4 * Math.sin(x * 0.18 + t * 0.12) + 1.2 * Math.sin(x * 0.07 - t * 0.05)) - 2;
-      const from = (x + (t >> 1)) % 9 === 0 ? 1 : 0;
-      for (let k = from; k < 5; k++) {
-        // The day's number keeps its corner.
-        if (x < 10 && top + k < 7) continue;
-        set(cv, x, top + k, band[k]);
+      const top = 3 + ((38 * SINE[(x * 2 + t) & 63] + 19 * SINE[(((x * 3) >> 2) - (t >> 1)) & 63] + 128) >> 8);
+      for (let k = (x + (t >> 1)) % 9 === 0 ? 1 : 0; k < 5; k++) {
+        const y = top + k;
+        // Nothing above the sky, and the day's number keeps its corner.
+        if (y < 0 || (x < 10 && y < 7)) continue;
+        px[y * W + x] = AURORA[k];
       }
     }
     for (const x of [9, 27, 52, 66]) sprite(cv, x, 9, DARK_PINE);

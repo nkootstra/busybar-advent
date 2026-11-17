@@ -159,6 +159,12 @@ export function text(cv, x, y, str, color, scale = 1) {
   }
   return cx;
 }
+/**
+ * A sine wave in whole numbers: SINE[i] is the sine of i/64 of a turn, times 16. The bar's runtime allocates
+ * memory for every fraction it computes, so animations that run on every frame count in whole numbers.
+ */
+export const SINE = [];
+for (let i = 0; i < 64; i++) SINE.push(Math.round(Math.sin((i * Math.PI) / 32) * 16));
 /** A repeatable pseudo-random number in [0, 1) for an integer seed. */
 export function rnd(i) {
   return (Math.imul(i + 1, 2654435761) >>> 0) % 9973 / 9973;
