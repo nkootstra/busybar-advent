@@ -41,19 +41,29 @@ export function set(cv, x, y, c) {
   if (x < 0 || y < 0 || x >= cv.w || y >= cv.h) return;
   cv.px[(y | 0) * cv.w + (x | 0)] = c;
 }
+/** Fills a rectangle; the part outside the canvas is dropped. */
 export function rect(cv, x, y, w, h, c) {
-  for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) set(cv, i, j, c);
+  const x0 = Math.max(0, x);
+  const x1 = Math.min(cv.w, x + w);
+  const y1 = Math.min(cv.h, y + h);
+  for (let j = Math.max(0, y); j < y1; j++) {
+    const row = j * cv.w;
+    for (let i = x0; i < x1; i++) cv.px[row + i] = c;
+  }
 }
 export function disc(cv, cx, cy, r, c) {
   for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (i * i + j * j <= r * r + r * 0.6) set(cv, cx + i, cy + j, c);
 }
-/** Draws rows of palette characters; spaces are transparent. */
+/** Draws rows of palette characters; spaces are transparent, and the part outside the canvas is dropped. */
 export function sprite(cv, x, y, rows) {
-  for (let j = 0; j < rows.length; j++) {
+  const first = Math.max(0, -x);
+  for (let j = Math.max(0, -y); j < rows.length && y + j < cv.h; j++) {
     const row = rows[j];
-    for (let i = 0; i < row.length; i++) {
+    const at = (y + j) * cv.w + x;
+    const end = Math.min(row.length, cv.w - x);
+    for (let i = first; i < end; i++) {
       const c = row[i];
-      if (c !== " ") set(cv, x + i, y + j, c);
+      if (c !== " ") cv.px[at + i] = c;
     }
   }
 }

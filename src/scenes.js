@@ -398,12 +398,13 @@ const aurora = {
       const h = 15 - Math.round(1.5 + 1.2 * Math.sin(x * 0.09) + Math.sin(x * 0.23 + 1));
       for (let y = h; y < 16; y++) set(cv, x, y, ".");
     }
+    for (const x of [9, 27, 52, 66]) sprite(cv, x, 10, DARK_PINE);
   },
   draw(cv, t) {
     // Two waves of different lengths drift against each other; the band hangs five rows down from them.
     const px = cv.px;
     for (let x = 0; x < W; x++) {
-      const top = 3 + ((38 * SINE[(x * 2 + t) & 63] + 19 * SINE[(((x * 3) >> 2) - (t >> 1)) & 63] + 128) >> 8);
+      const top = 2 + ((38 * SINE[(x * 2 + t) & 63] + 19 * SINE[(((x * 3) >> 2) - (t >> 1)) & 63] + 128) >> 8);
       for (let k = (x + (t >> 1)) % 9 === 0 ? 1 : 0; k < 5; k++) {
         const y = top + k;
         // Nothing above the sky, and the day's number keeps its corner.
@@ -411,7 +412,6 @@ const aurora = {
         px[y * W + x] = AURORA[k];
       }
     }
-    for (const x of [9, 27, 52, 66]) sprite(cv, x, 9, DARK_PINE);
   },
 };
 
